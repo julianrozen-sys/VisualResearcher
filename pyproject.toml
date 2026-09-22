@@ -1,0 +1,102 @@
+[project]
+name = "visualresearcher"
+version = "0.1.0"
+description = "Researches and downloads chronologically-ordered visual assets for long-form narration."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.7",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "sqlmodel>=0.0.22",
+    "httpx>=0.27",
+    # §4: image validation and perceptual hashing for dedupe (§11).
+    "pillow>=10.3",
+    "imagehash>=4.3",
+    # §4: keyless image search.
+    "ddgs>=9.0",
+    # §4: the review UI. Jinja2 + HTMX, no client framework, no build step.
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    # Required by FastAPI to parse HTML form posts, which is how every
+    # review action arrives (§15).
+    "python-multipart>=0.0.9",
+    # §4: folder watching, with a polling fallback if it misbehaves (§18.1).
+    "watchdog>=4.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[project.scripts]
+visualresearch = "visualresearcher.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.5",
+]
+# CLIP ranking (§4). A dependency group rather than an optional extra because
+# `uv sync` installs default groups but prunes extras -- as an extra, a plain
+# `uv sync` silently uninstalled torch and ranking quietly lost its CLIP term.
+# Pinned to the CPU wheel index below: §3 says CPU-only unless the user
+# confirms an NVIDIA GPU, and the CUDA wheels are several gigabytes.
+rank = ["torch>=2.2", "torchvision>=0.17", "open_clip_torch>=2.24"]
+# Real transcription (§4). A group, not an extra, for the same reason as
+# `rank`: `uv sync` prunes extras, and losing this one is worse than losing
+# torch -- the pipeline would fall back to the fake transcriber and produce
+# a plausible synthetic transcript for real audio, with nothing to show
+# that anything went wrong.
+transcribe = ["faster-whisper>=1.0"]
+
+[tool.uv]
+default-groups = ["dev", "rank", "transcribe"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/visualresearcher"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# basetemp keeps tmp_path on D:. The default is under the system temp dir on
+# C:, which CLAUDE.md §3 forbids and which has too little free space for the
+# disk guard to let any stage run. pytest owns and clears this directory.
+# NOTE: no -q here. The documented command is `pytest -q`, and a -q in
+# addopts makes that -qq, which silently suppresses the "N passed" summary
+# line -- so the one number you run the suite for disappears.
+addopts = "--basetemp=.tmp/pytest"
+# If any single test runs longer than this, pytest dumps the stack of every
+# thread to stderr. The suite runs real pipelines and a worker pool, so
+# "slow" and "wedged" look identical from outside -- this makes a hang say
+# where it is stuck instead of sitting silently. faulthandler is stdlib, so
+# it costs no dependency (§2.10). In pytest 9 this is an ini option; the
+# --faulthandler-timeout command-line flag no longer exists.
+faulthandler_timeout = 300
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# The embedded PowerShell toast script has long type-accelerator lines.
+# They are not Python and cannot be wrapped without changing what the
+# shell parses.
+"src/visualresearcher/providers/notify/desktop.py" = ["E501"]

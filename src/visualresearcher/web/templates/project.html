@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} — VisualResearcher{% endblock %}
+{% block subtitle %}{{ context.subject or name }}{% endblock %}
+{% block headerright %}{{ selected_count }} file(s) in selected/{% endblock %}
+{% block content %}
+
+<div class="flex flex-wrap items-center gap-3 mb-5">
+  <h1 class="text-lg font-semibold">{{ name }}</h1>
+  <span class="text-sm text-neutral-500">{{ total }} segments</span>
+
+  {# Gap count at the top, and jump-to-next-gap (§15). #}
+  {% if gap_count %}
+    <span class="band-low chip rounded px-2 py-1 text-xs">{{ gap_count }} gap(s)</span>
+    <a href="#seg-{{ gap_indexes[0] }}" id="next-gap"
+       class="chip rounded px-3 py-1 text-xs hover:border-sky-500">jump to next gap →</a>
+  {% else %}
+    <span class="band-high chip rounded px-2 py-1 text-xs">no gaps</span>
+  {% endif %}
+
+  <div class="ml-auto flex items-center gap-1 text-xs">
+    <span class="text-neutral-500 mr-1">filter:</span>
+    {% for option in ['all', 'high', 'medium', 'low'] %}
+      <a href="?band={{ option }}"
+         class="chip rounded px-2.5 py-1 {% if band == option %}border-sky-500 text-sky-300{% endif %}">{{ option }}</a>
+    {% endfor %}
+    <form method="post" action="/projects/{{ name }}/collect" class="ml-2">
+      <button class="chip rounded px-2.5 py-1 hover:border-sky-500">rebuild selected/</button>
+    </form>
+  </div>
+</div>
+
+{% if gap_count %}
+<script>
+  // Cycle through gaps rather than always jumping to the first one.
+  (function () {
+    var gaps = {{ gap_indexes|tojson }};
+    var at = 0;
+    var link = document.getElementById('next-gap');
+    if (!link) return;
+    link.addEventListener('click', function (event) {
+      event.preventDefault();
+      var target = document.getElementById('seg-' + gaps[at % gaps.length]);
+      at += 1;
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  })();
+</script>
+{% endif %}
+
+<div class="space-y-3">
+{% for card in cards %}
+  <div id="seg-{{ card.segment.index }}"
+       class="card rounded-lg p-4 {% if card.is_gap %}border-l-4 border-l-red-700{% endif %}">
+    <div hx-get="/projects/{{ name }}/segments/{{ card.segment.index }}"
+         hx-trigger="load" hx-swap="innerHTML">
+      {# Collapsed placeholder until the card loads. #}
+      <div class="flex items-center gap-3 text-sm">
+        <span class="font-mono text-neutral-500">{{ '%03d'|format(card.segment.index) }}</span>
+        <span class="font-mono text-xs text-neutral-500">{{ timecode(card.segment.start) }}</span>
+        <span class="chip rounded px-2 py-0.5 text-xs band-{{ card.band }}">{{ card.band }}</span>
+        <span class="text-neutral-400 truncate">{{ card.segment.topic or card.segment.narration[:80] }}</span>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <p class="text-neutral-400 text-sm">No segments match this filter.</p>
+{% endfor %}
+</div>
+{% endblock %}

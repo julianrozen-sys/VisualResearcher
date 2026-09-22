@@ -1,0 +1,146 @@
+# Domain pack: Star Wars: The Old Republic
+#
+# Seeds entity resolution (CLAUDE.md §10). A transcriber hears "Barriss" where
+# the narrator said "Darth Baras"; this file is how that gets fixed without an
+# LLM call and without guessing.
+#
+# Rules this file has to respect:
+#   * Corrections are never applied blindly. Every entry carries a confidence
+#     and a human-readable reason, both of which end up in
+#     project_context.json (§10.1).
+#   * A correction is only applied at confidence >= 0.75. Below that both
+#     spellings get searched and ranking decides (§10.3).
+#   * The transcript on disk always keeps the ORIGINAL words. Corrections
+#     apply to search queries only (§10.2).
+#
+# Add entries freely; nothing here is compiled into code.
+
+name: swtor
+title: "Star Wars: The Old Republic"
+franchise: "Star Wars"
+era: "Old Republic"
+
+# Short qualifier appended to search queries. CLAUDE.md §7 shows queries
+# like "Darth Baras Dark Council SWTOR" -- the abbreviation is what image
+# and YouTube search actually respond to, not the full title.
+search_tag: "SWTOR"
+
+# If enough of these appear in the narration, the pack activates. Matching is
+# case-insensitive and on word boundaries.
+triggers:
+  - swtor
+  - the old republic
+  - sith warrior
+  - dark council
+  - korriban
+  - dromund kaas
+  - sith inquisitor
+  - imperial agent
+  - bounty hunter
+  - jedi knight
+  - voice of the emperor
+
+# How many distinct triggers must appear before the pack is considered active.
+min_triggers: 2
+
+entities:
+  # -- the four known mishearings from §10 ---------------------------------
+  - canonical: "Darth Baras"
+    type: character
+    aliases: ["Barriss", "Barris", "Baras", "Barass", "Darth Barras", "Borace"]
+    confidence: 0.93
+    reason: "Sith Warrior + Dark Council context."
+    evidence: ["domain_pack:swtor"]
+    also_known_as: ["Voice of the Emperor"]
+    search_hints: ["SWTOR Sith Warrior", "Dark Council"]
+
+  - canonical: "Darth Vowrawn"
+    type: character
+    aliases: ["Valron", "Vaulron", "Vowran", "Vaurawn", "Val Ron"]
+    confidence: 0.88
+    reason: "Dark Council member allied with the Sith Warrior against Baras."
+    evidence: ["domain_pack:swtor"]
+    search_hints: ["SWTOR Dark Council", "Sphere of Production"]
+
+  - canonical: "Colonel Senks"
+    type: character
+    aliases: ["Sanx", "Sanks", "Sinks", "Senks", "Colonel Sanx"]
+    confidence: 0.82
+    reason: "Imperial officer in the Sith Warrior storyline."
+    evidence: ["domain_pack:swtor"]
+    search_hints: ["SWTOR Imperial officer"]
+
+  - canonical: "Lord Draahg"
+    type: character
+    aliases: ["Drog", "Drahg", "Draag", "Draag", "Lord Drog"]
+    confidence: 0.86
+    reason: "Baras's enforcer; fought on Hoth and Quesh."
+    evidence: ["domain_pack:swtor"]
+    search_hints: ["SWTOR Baras apprentice", "Hoth"]
+
+  # -- supporting cast, useful for query enrichment ------------------------
+  - canonical: "Darth Marr"
+    type: character
+    aliases: ["Dark Marr", "Darth Mar"]
+    confidence: 0.90
+    reason: "Dark Council member, Sphere of Defence of the Empire."
+    evidence: ["domain_pack:swtor"]
+
+  - canonical: "Vette"
+    type: character
+    aliases: ["Vet", "Vett"]
+    confidence: 0.78
+    reason: "Twi'lek companion of the Sith Warrior."
+    evidence: ["domain_pack:swtor"]
+
+  - canonical: "Jaesa Willsaam"
+    type: character
+    aliases: ["Jasa", "Jaysa", "Jaesa Wilsam"]
+    confidence: 0.80
+    reason: "Sith Warrior companion, apprentice."
+    evidence: ["domain_pack:swtor"]
+
+  - canonical: "Darth Nox"
+    type: character
+    aliases: ["Dark Nox", "Darth Knox"]
+    confidence: 0.80
+    reason: "Sith Inquisitor's dark-side title."
+    evidence: ["domain_pack:swtor"]
+
+  # -- places ---------------------------------------------------------------
+  - canonical: "Korriban"
+    type: place
+    aliases: ["Korriban", "Coriban", "Korriban Academy"]
+    confidence: 0.90
+    reason: "Sith homeworld and academy."
+    evidence: ["domain_pack:swtor"]
+
+  - canonical: "Dromund Kaas"
+    type: place
+    aliases: ["Dromond Kaas", "Drummond Kaas", "Dromund Kas"]
+    confidence: 0.88
+    reason: "Imperial capital world."
+    evidence: ["domain_pack:swtor"]
+
+  - canonical: "Quesh"
+    type: place
+    aliases: ["Kesh", "Quesh"]
+    confidence: 0.75
+    reason: "Planet in the Sith Warrior storyline."
+    evidence: ["domain_pack:swtor"]
+
+# Terminology carried into project_context.json and used to enrich queries.
+terminology:
+  - "Dark Council"
+  - "Voice of the Emperor"
+  - "Sith Warrior"
+  - "Sphere of Production"
+  - "Wrath of the Emperor"
+  - "Sith Academy"
+  - "Imperial Guard"
+
+works:
+  - title: "Star Wars: The Old Republic"
+    type: game
+  - title: "SWTOR Sith Warrior storyline"
+    type: game

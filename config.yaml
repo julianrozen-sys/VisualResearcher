@@ -1,0 +1,88 @@
+# VisualResearcher configuration (CLAUDE.md §16).
+# Every value here has a default in src/visualresearcher/config.py; this file
+# only needs the ones you want to change.
+
+segmentation:
+  target_s: 8.0
+  min_s: 6.0
+  max_s: 10.0
+
+images:
+  # Left where they were on purpose. Delivering more images per segment is not
+  # the same as finding better ones, and raising these only inflates the pile
+  # and the runtime. The lever that matters is query quality -- see
+  # `narration_subjects` in pipeline/queries.py.
+  candidates_per_segment: 30
+  keep_per_segment: 8
+  max_bytes: 15728640
+  min_width: 800
+  phash_distance: 6
+  providers: [ddgs, wikimedia]
+
+clips:
+  enabled: true
+  # One clip per segment gave no alternative when the single pick was poor;
+  # two is enough to choose between without doubling the download.
+  max_per_segment: 2
+  padding_s: 3
+  max_height: 1080
+  max_full_download_minutes: 15
+  max_project_gb: 15
+  concurrency: 2
+
+ranking:
+  model: ViT-B-32
+  pretrained: laion2b_s34b_b79k
+  device: auto
+  seed: 1729
+  weights:
+    clip: 0.45
+    entity: 0.2
+    source: 0.1
+    resolution: 0.1
+    sharpness: 0.1
+    repetition: -0.15
+
+output:
+  root: "D:/dev/visualresearcher/projects"
+  slug_max_len: 40
+  write_srt: true
+  min_free_gb: 5
+
+# Calibrated against real CLIP scores on 2026-09-20, not guessed.
+#
+# Every earlier run used VR_OFFLINE=1, whose fake embedder has meaningless
+# similarity by construction, so these two numbers had never met real output.
+# The first live run put the real distribution at min 0.512 / median 0.581 /
+# max 0.648 over 15 segments of a 12m45s narration.
+#
+# `medium` at 0.60 delivered 6 of 15 segments. 0.55 delivers 13 of 15 and sits
+# in a flat part of the distribution -- 0.52 delivers the same 13 -- so it is
+# robust rather than fitted to noise. It still excludes segment 010 (0.512),
+# which is a genuinely poor match and should stay a gap.
+#
+# `high` at 0.85 was unreachable: nothing scored above 0.648, so every asset
+# was flagged for review forever and the band meant nothing. 0.62 is above the
+# median and reachable by the better segments, which is what "high" should mean.
+confidence:
+  high: 0.62
+  medium: 0.55
+
+watch:
+  dir: "D:/shared/incoming"
+  filename_prefix: "Tight"
+  stable_secs: 3
+  poll_interval_s: 5
+
+worker:
+  max_concurrent: 2
+
+compute:
+  max_concurrent_cpu_heavy: 1
+
+transcription:
+  provider: faster_whisper
+  model: base
+  device: cpu
+  compute_type: int8
+  language: null

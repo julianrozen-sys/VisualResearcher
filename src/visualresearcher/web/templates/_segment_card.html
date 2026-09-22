@@ -1,0 +1,183 @@
+{# One segment card. Every action re-renders this partial (§15). #}
+{% set used = segment.picks | selectattr('use') | list %}
+{% set best = (used | map(attribute='confidence') | max) if used else 0.0 %}
+{% set band = 'high' if best >= 0.85 else ('medium' if best >= 0.60 else 'low') %}
+
+<div class="space-y-3">
+
+  {# -- header: timecode, confidence badge, topic ------------------------ #}
+  <div class="flex flex-wrap items-center gap-3">
+    <span class="font-mono text-neutral-500 text-sm">{{ '%03d'|format(segment.index) }}</span>
+    <span class="font-mono text-xs chip rounded px-2 py-0.5">
+      {{ timecode(segment.start) }}&ndash;{{ timecode(segment.end) }} &middot; {{ '%.1fs'|format(segment.duration) }}
+    </span>
+    <span class="chip rounded px-2 py-0.5 text-xs band-{{ band }}">
+      {{ band }} {{ '%.2f'|format(best) }}
+    </span>
+    {% if not used %}
+      <span class="chip rounded px-2 py-0.5 text-xs band-low">GAP &mdash; nothing selected</span>
+    {% endif %}
+    {% if segment.status == 'degraded' %}
+      <span class="chip rounded px-2 py-0.5 text-xs band-medium">degraded</span>
+    {% endif %}
+    <span class="chip rounded px-2 py-0.5 text-xs">{{ segment.visual_intent }}</span>
+
+    <form class="ml-auto" hx-post="/projects/{{ name }}/segments/{{ segment.index }}/reviewed"
+          hx-target="closest .card > div" hx-swap="innerHTML">
+      <button class="chip rounded px-2.5 py-1 text-xs hover:border-emerald-500">mark reviewed</button>
+    </form>
+  </div>
+
+  {# -- narration and interpretation ------------------------------------- #}
+  <p class="text-sm leading-relaxed">{{ segment.narration }}</p>
+  {% if segment.interpretation %}
+    <p class="text-xs text-neutral-400 italic border-l-2 border-[#2c3242] pl-3">
+      {{ segment.interpretation }}
+    </p>
+  {% endif %}
+
+  {# -- entities: visible and reversible (§15) ---------------------------- #}
+  <form class="flex items-center gap-2 text-xs"
+        hx-post="/projects/{{ name }}/segments/{{ segment.index }}/entity"
+        hx-target="closest .card > div" hx-swap="innerHTML">
+    <span class="text-neutral-500 shrink-0">entities</span>
+    <input name="entities" value="{{ segment.entities | join(', ') }}"
+           class="chip rounded px-2 py-1 flex-1 font-mono text-xs bg-transparent">
+    <button class="chip rounded px-2 py-1 hover:border-sky-500">save</button>
+  </form>
+
+  {% if context.entity_corrections %}
+    <details class="text-xs">
+      <summary class="text-neutral-500 cursor-pointer">corrections applied to queries</summary>
+      <ul class="mt-2 space-y-1 text-neutral-400">
+        {% for c in context.entity_corrections %}
+          {% if c.original|lower in segment.narration|lower %}
+          <li>
+            <span class="font-mono">{{ c.original }}</span> &rarr;
+            <span class="font-mono text-emerald-400">{{ c.resolved }}</span>
+            <span class="text-neutral-500">{{ '%.2f'|format(c.confidence) }} &middot; {{ c.method }}</span>
+            <div class="text-neutral-600">{{ c.reason }}</div>
+          </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+
+  {# -- queries, and adding one ------------------------------------------- #}
+  <details class="text-xs">
+    <summary class="text-neutral-500 cursor-pointer">{{ segment.queries|length }} queries</summary>
+    <ul class="mt-2 space-y-1">
+      {% for q in segment.queries %}
+        <li class="flex gap-2">
+          <span class="chip rounded px-1.5 text-neutral-500 shrink-0">{{ q.kind }}</span>
+          <span class="font-mono text-neutral-300">{{ q.text }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <form class="flex gap-2 mt-2"
+          hx-post="/projects/{{ name }}/segments/{{ segment.index }}/query"
+          hx-target="closest .card > div" hx-swap="innerHTML">
+      <input name="text" placeholder="add a query and re-run search later"
+             class="chip rounded px-2 py-1 flex-1 bg-transparent">
+      <button class="chip rounded px-2 py-1 hover:border-sky-500">add</button>
+    </form>
+  </details>
+
+  {# -- image grid -------------------------------------------------------- #}
+  {% if images %}
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+    {% for img in images %}
+    <div class="relative group">
+      <img src="{{ img.url }}" loading="lazy"
+           class="thumb w-full rounded {% if img.use %}thumb-used{% endif %} {% if img.rejected %}thumb-rejected{% endif %}"
+           alt="rank {{ img.rank }}">
+      <div class="absolute top-1 left-1 flex gap-1">
+        {% if img.rank %}<span class="chip rounded px-1 text-[10px]">#{{ img.rank }}</span>{% endif %}
+        {% if img.favorite %}<span class="chip rounded px-1 text-[10px]">&#9733;</span>{% endif %}
+      </div>
+      <div class="absolute inset-x-1 bottom-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+        <form hx-post="/projects/{{ name }}/segments/{{ segment.index }}/use"
+              hx-target="closest .card > div" hx-swap="innerHTML" class="flex-1">
+          <input type="hidden" name="path" value="{{ img.path }}">
+          <button class="w-full chip rounded px-1 py-0.5 text-[10px] hover:border-emerald-500">
+            {% if img.use %}USED{% else %}USE THIS{% endif %}
+          </button>
+        </form>
+        <form hx-post="/projects/{{ name }}/segments/{{ segment.index }}/favorite"
+              hx-target="closest .card > div" hx-swap="innerHTML">
+          <input type="hidden" name="path" value="{{ img.path }}">
+          <button class="chip rounded px-1 py-0.5 text-[10px]" title="favorite">&#9733;</button>
+        </form>
+        <form hx-post="/projects/{{ name }}/segments/{{ segment.index }}/reject"
+              hx-target="closest .card > div" hx-swap="innerHTML">
+          <input type="hidden" name="path" value="{{ img.path }}">
+          <button class="chip rounded px-1 py-0.5 text-[10px] hover:border-red-500" title="reject">&#10005;</button>
+        </form>
+      </div>
+      <div class="mt-1 text-[10px] text-neutral-500 truncate">
+        {{ '%.3f'|format(img.score) }} &middot; {{ img.domain }}
+        {% if img.source_page %}
+          &middot; <a href="{{ img.source_page }}" target="_blank" rel="noopener"
+               class="text-sky-500 hover:underline">source</a>
+        {% endif %}
+      </div>
+      <div class="text-[10px] text-neutral-600 truncate">{{ img.license }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="text-xs text-neutral-500">No images for this segment.</p>
+  {% endif %}
+
+  {# -- YouTube results with clickable timestamps and inline preview ------ #}
+  {% if videos %}
+  <details class="text-xs" {% if videos and videos[0].clip_url %}open{% endif %}>
+    <summary class="text-neutral-500 cursor-pointer">{{ videos|length }} video result(s)</summary>
+    <div class="mt-2 space-y-2">
+      {% for v in videos %}
+      <div class="chip rounded p-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip rounded px-1.5 py-0.5 text-[10px]
+            {% if v.classification == 'EXACT_SCENE' %}band-high
+            {% elif v.classification == 'LIKELY_EXACT_SCENE' %}band-medium{% endif %}">
+            {{ v.classification }}
+          </span>
+          <a href="{{ v.url }}" target="_blank" rel="noopener"
+             class="text-sky-400 hover:underline">{{ v.title[:80] }}</a>
+          {% if v.best %}
+            <button data-copy="{{ v.url }}"
+                    class="copy-timestamp chip rounded px-1.5 py-0.5 text-[10px]"
+                    title="copy timestamp URL">{{ v.best_timecode }} &#10697;</button>
+            <span class="text-neutral-600">{{ v.best.method }} &middot; {{ '%.2f'|format(v.best.confidence) }}</span>
+          {% endif %}
+        </div>
+        <div class="text-neutral-500 mt-1">{{ v.reason }}</div>
+        {% if v.best and v.best.evidence %}
+          <div class="text-neutral-600 mt-0.5">evidence: {{ v.best.evidence }}</div>
+        {% endif %}
+        {% if v.clip_url %}
+          <video src="{{ v.clip_url }}" controls preload="none"
+                 class="mt-2 rounded w-full max-w-md"></video>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+  {# -- notes -------------------------------------------------------------- #}
+  {% if segment.notes %}
+    <ul class="text-[11px] text-neutral-500 space-y-0.5">
+      {% for note in segment.notes %}<li>&middot; {{ note }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  <form class="flex gap-2"
+        hx-post="/projects/{{ name }}/segments/{{ segment.index }}/note"
+        hx-target="closest .card > div" hx-swap="innerHTML">
+    <input name="note" placeholder="add a note"
+           class="chip rounded px-2 py-1 flex-1 text-xs bg-transparent">
+    <button class="chip rounded px-2 py-1 text-xs hover:border-sky-500">note</button>
+  </form>
+
+</div>

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Jobs — VisualResearcher{% endblock %}
+{% block subtitle %}jobs{% endblock %}
+{% block content %}
+<h1 class="text-lg font-semibold mb-4">Jobs</h1>
+{% if not rows %}
+  <p class="text-neutral-400 text-sm">
+    No jobs yet. Run <code class="chip px-1.5 py-0.5 rounded">visualresearch run narration.wav</code>.
+  </p>
+{% else %}
+<div class="card rounded-lg overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="text-left text-neutral-400 border-b border-[#242833]">
+      <tr>
+        <th class="px-4 py-2 font-medium">Job</th>
+        <th class="px-4 py-2 font-medium">Project</th>
+        <th class="px-4 py-2 font-medium">State</th>
+        <th class="px-4 py-2 font-medium">Stage</th>
+        <th class="px-4 py-2 font-medium text-right">Segments</th>
+        <th class="px-4 py-2 font-medium text-right">Disk</th>
+        <th class="px-4 py-2 font-medium text-right">Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="border-b border-[#1c2029] last:border-0">
+        <td class="px-4 py-2 font-mono text-xs text-neutral-400">{{ row.job.id }}</td>
+        <td class="px-4 py-2">
+          {% if row.exists %}
+            <a class="text-sky-400 hover:underline" href="/projects/{{ row.job.project }}">{{ row.job.project }}</a>
+          {% else %}{{ row.job.project }}{% endif %}
+        </td>
+        <td class="px-4 py-2">
+          <span class="chip rounded px-2 py-0.5 text-xs
+            {% if row.job.state == 'COMPLETE' %}band-high{% elif row.job.state == 'FAILED' %}band-low
+            {% elif row.job.state == 'REVIEW_REQUIRED' %}band-medium{% endif %}">{{ row.job.state }}</span>
+        </td>
+        <td class="px-4 py-2 text-neutral-400">{{ row.job.stage or '—' }}</td>
+        <td class="px-4 py-2 text-right">{{ row.job.segments_total or '—' }}</td>
+        <td class="px-4 py-2 text-right text-neutral-400">{{ '%.0f MB'|format(row.size_mb) }}</td>
+        <td class="px-4 py-2 text-right text-neutral-400">
+          {% if row.duration %}{{ '%.0fs'|format(row.duration) }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if projects %}
+<h2 class="text-sm font-semibold mt-8 mb-2 text-neutral-400">Projects on disk</h2>
+<div class="flex flex-wrap gap-2">
+  {% for p in projects %}
+  <a href="/projects/{{ p }}" class="chip rounded px-3 py-1.5 text-sm hover:border-sky-500">{{ p }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

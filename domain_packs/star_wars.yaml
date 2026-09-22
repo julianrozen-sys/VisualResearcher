@@ -1,0 +1,97 @@
+# Domain pack: Star Wars (general)
+#
+# Broader than swtor.yaml and deliberately shallower. It exists so that a
+# narration which mentions the wider franchise still resolves the obvious
+# names, and so that query generation has franchise-level terminology to lean
+# on. See swtor.yaml for the rules every pack follows (CLAUDE.md §10).
+
+name: star_wars
+title: "Star Wars"
+franchise: "Star Wars"
+era: ""
+
+# See swtor.yaml for what this is for.
+search_tag: "Star Wars"
+
+triggers:
+  - star wars
+  - jedi
+  - sith
+  - lightsaber
+  - the force
+  - galactic empire
+  - rebel alliance
+  - clone wars
+  - mandalorian
+
+min_triggers: 2
+
+entities:
+  - canonical: "Darth Vader"
+    type: character
+    aliases: ["Dark Vader", "Darth Vadar", "Anakin Skywalker"]
+    confidence: 0.92
+    reason: "Central Star Wars character; 'Dark Vader' is a common mishearing."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Emperor Palpatine"
+    type: character
+    aliases: ["Palpatine", "Darth Sidious", "Palpatin", "Sheev Palpatine"]
+    confidence: 0.90
+    reason: "Galactic Emperor; Sidious is his Sith title."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Obi-Wan Kenobi"
+    type: character
+    aliases: ["Obi Wan", "Obiwan", "Ben Kenobi", "Obi-Wan"]
+    confidence: 0.90
+    reason: "Jedi Master; spelling varies wildly in transcripts."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Darth Revan"
+    type: character
+    aliases: ["Revan", "Raven", "Darth Raven", "Revann"]
+    confidence: 0.85
+    reason: "'Raven' is the standard mistranscription of Revan."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Darth Malgus"
+    type: character
+    aliases: ["Malgus", "Malgas", "Dark Malgus"]
+    confidence: 0.86
+    reason: "Sith Lord prominent in Old Republic era trailers."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Mandalorian"
+    type: terminology
+    aliases: ["Mandalorians", "Mandaloreans", "Mandolorian"]
+    confidence: 0.80
+    reason: "Frequently misspelled."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Coruscant"
+    type: place
+    aliases: ["Coruscant", "Corusant", "Korusant"]
+    confidence: 0.85
+    reason: "Republic capital world."
+    evidence: ["domain_pack:star_wars"]
+
+  - canonical: "Tatooine"
+    type: place
+    aliases: ["Tattooine", "Tatoine", "Tatooin"]
+    confidence: 0.85
+    reason: "Desert world; doubled letters are commonly dropped."
+    evidence: ["domain_pack:star_wars"]
+
+terminology:
+  - "the Force"
+  - "lightsaber"
+  - "Jedi Order"
+  - "Sith Order"
+  - "Galactic Republic"
+  - "Galactic Empire"
+  - "holocron"
+
+works:
+  - title: "Star Wars"
+    type: franchise
