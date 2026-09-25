@@ -53,9 +53,17 @@ class WatchEvent:
 
 
 def matches_prefix(name: str, prefix: str) -> bool:
-    """§18.2: ``.wav`` files starting with the prefix, case-insensitively."""
+    """§18.2: audio files starting with the prefix, case-insensitively.
+
+    Every format :mod:`~..pipeline.ingest` can read is accepted, not just
+    ``.wav``. Restricting the drop folder to one extension meant dropping an
+    mp3 did nothing at all -- no error, no project, no log line -- while the
+    same file passed straight through `visualresearch run`.
+    """
+    from ..pipeline.ingest import AUDIO_SUFFIXES
+
     lowered = name.lower()
-    if not lowered.endswith(".wav"):
+    if not any(lowered.endswith(suffix) for suffix in AUDIO_SUFFIXES):
         return False
     return lowered.startswith(prefix.lower()) if prefix else True
 

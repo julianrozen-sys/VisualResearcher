@@ -69,8 +69,12 @@ confidence:
   medium: 0.55
 
 watch:
-  dir: "D:/shared/incoming"
-  filename_prefix: "Tight"
+  # The drop folder. Anything audio landing here becomes a project on its own.
+  dir: "D:/dev/visualresearcher/inbox"
+  # Empty means every audio file, not just ones named a particular way. A
+  # prefix here silently ignores everything else, which looks like the watcher
+  # being broken rather than being selective.
+  filename_prefix: ""
   stable_secs: 3
   poll_interval_s: 5
 

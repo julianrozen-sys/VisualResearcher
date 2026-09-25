@@ -212,7 +212,10 @@ Build `doctor` early in Phase 1 — it must state plainly what's missing and wha
 ## 18. Folder watcher (the automation trigger)
 VoiceCleaner triggers this by dropping a file. No HTTP call, no JSON from its side.
 1. Watch `watch.dir` with `watchdog`; fall back to polling `poll_interval_s`.
-2. React only to `.wav` files starting with `watch.filename_prefix` (case-insensitive).
+2. React to any audio file `ingest` accepts (`.wav .mp3 .m4a .flac .ogg .opus .aac`)
+   starting with `watch.filename_prefix` (case-insensitive). Widened from `.wav`-only
+   on 2026-09-24: a dropped mp3 was silently ignored while `run` accepted it, which
+   read as the watcher being broken. An empty prefix means every audio file.
 3. **Stability guard:** poll size every 1s; proceed only after unchanged for `stable_secs` —
    VoiceCleaner may still be writing.
 4. `project_name` = slugified filename stem, with timestamp suffix on collision.

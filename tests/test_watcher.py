@@ -65,7 +65,7 @@ def test_the_prefix_matches_case_insensitively(name):
     "name",
     [
         "episode_Tight.wav",  # prefix is not at the start
-        "Tight_episode.mp3",  # not a wav
+        "Tight_episode.txt",  # not audio at all
         "Tight_episode.wav.tmp",
         "random.wav",
         "Tight",  # no extension
@@ -76,9 +76,18 @@ def test_non_matching_names_are_ignored(name):
     assert matches_prefix(name, "Tight") is False
 
 
-def test_an_empty_prefix_accepts_any_wav():
-    assert matches_prefix("anything.wav", "") is True
-    assert matches_prefix("anything.mp3", "") is False
+def test_an_empty_prefix_accepts_any_audio_file():
+    """Every format ingest can read, not just wav.
+
+    §18.2 originally said ".wav files". Restricting the drop folder to one
+    extension meant dropping an mp3 did nothing at all -- no error, no
+    project, no log line -- while `visualresearch run` took the same file
+    happily. The drop folder now accepts whatever the pipeline accepts.
+    """
+    for name in ("anything.wav", "anything.mp3", "anything.m4a", "anything.flac"):
+        assert matches_prefix(name, "") is True, name
+    for name in ("notes.txt", "clip.mp4", "photo.jpg", "anything"):
+        assert matches_prefix(name, "") is False, name
 
 
 def test_a_non_matching_file_is_left_alone(watcher, drop, db_path):
